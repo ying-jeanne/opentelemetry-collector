@@ -77,7 +77,7 @@ func (ms Metrics) DataPointCount() (dataPointCount int) {
 				case MetricTypeSum:
 					dataPointCount += m.Sum().DataPoints().Len()
 				case MetricTypeHistogram:
-					dataPointCount += m.Histogram().DataPoints().Len()
+					dataPointCount += histogramDataPointCounter(m.Histogram())
 				case MetricTypeExponentialHistogram:
 					dataPointCount += m.ExponentialHistogram().DataPoints().Len()
 				case MetricTypeSummary:
@@ -87,6 +87,19 @@ func (ms Metrics) DataPointCount() (dataPointCount int) {
 		}
 	}
 	return
+}
+
+func histogramDataPointCounter(his Histogram) int {
+	sum := 0
+	for i := 0; i < his.DataPoints().Len(); i++ {
+		sum++
+		// number of samples is the number of buckets + 1 (_count) + 1 (_sum)
+		bucketSize := his.DataPoints().At(i).BucketCounts().Len()
+		if bucketSize > 0 {
+			sum += bucketSize + 2
+		}
+	}
+	return sum
 }
 
 // MarkReadOnly marks the Metrics as shared so that no further modifications can be done on it.
